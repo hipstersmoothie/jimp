@@ -5,11 +5,17 @@
   <p>Configure jimp with types and plugins.</p>
 </div>
 
+- Add types
+- Add image manipulation methods
+- Add constructors
+
 ## Available Methods
 
 ### configure
 
 Takes a Jimp configuration and applies it to `@jimp/core`.
+
+#### Types
 
 Sample Jimp configuration:
 
@@ -28,6 +34,13 @@ configure({
 
 configure({
   types: [bmp, jpeg, ...]
+})
+
+// or
+configure({
+  constructors: [gradient]
+  types: [bmp, jpeg, ...],
+  plugins: [circle, shadow, ...],
 })
 ```
 

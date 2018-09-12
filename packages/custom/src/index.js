@@ -67,6 +67,12 @@ export default function configure(configuration, jimpInstance = Jimp) {
     configuration.plugins.forEach(addPlugin);
   }
 
+  if (configuration.constructors) {
+    configuration.constructors.forEach(args => {
+      Jimp.appendConstructorOption(...args);
+    });
+  }
+
   addJimpMethods(jimpConfig.class, jimpInstance);
   addConstants(jimpConfig.constants, jimpInstance);
 
