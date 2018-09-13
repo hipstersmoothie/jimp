@@ -64,10 +64,12 @@ function createGradient(width, height, gradient) {
       let color2Adjustment;
 
       if (x < 0) {
-        wave = Math.cos(
-          (10 / (width * x + height * y) / Math.PI) * (column * x + row * y)
-        );
-        console.log(wave);
+        const wave1 = Math.cos((10 / (width * x) / Math.PI) * x * column) * -x;
+        const wave2 = Math.cos((10 / (height * y) / Math.PI) * y * row) * y;
+
+        wave = (wave1 + wave2) / 2;
+        console.log(wave, wave1, wave2);
+
         a = 1 - (wave + 1) / 2;
         color1Adjustment = 1 - a;
         color2Adjustment = a;
