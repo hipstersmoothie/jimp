@@ -58,29 +58,13 @@ function createGradient(width, height, gradient) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
 
-      let wave;
-      let a;
-      let color1Adjustment;
-      let color2Adjustment;
-
-      if (x < 0) {
-        const wave1 = Math.cos((10 / (width * x) / Math.PI) * x * column) * -x;
-        const wave2 = Math.cos((10 / (height * y) / Math.PI) * y * row) * y;
-
-        wave = (wave1 + wave2) / 2;
-        console.log(wave, wave1, wave2);
-
-        a = 1 - (wave + 1) / 2;
-        color1Adjustment = 1 - a;
-        color2Adjustment = a;
-      } else {
-        wave = Math.cos(
-          (10 / (width * x + height * y) / Math.PI) * (column * x + row * y)
-        );
-        a = 1 - (wave + 1) / 2;
-        color1Adjustment = 1 - a;
-        color2Adjustment = a;
-      }
+      const wave = Math.cos(
+        (10 / (width * Math.abs(x) + height * Math.abs(y)) / Math.PI) *
+          (column * Math.abs(x) + row * Math.abs(y))
+      );
+      const a = 1 - (wave + 1) / 2;
+      const color1Adjustment = 1 - a;
+      const color2Adjustment = a;
 
       bitmap[index + 0] =
         limit255((color1Adjustment + modifier) * color1.r) +
@@ -95,7 +79,22 @@ function createGradient(width, height, gradient) {
     }
   }
 
-  return bitmap;
+  const finalBitmap = Buffer.alloc(bitmap.length);
+
+  for (let column = 0; column < width; column++) {
+    for (let row = 0; row < height; row++) {
+      const index = (width * row + column) << 2;
+
+      const _x = x < 0 ? width - 1 - column : column;
+      const _y = y < 0 ? height - 1 - row : row;
+      const _idx = (width * _y + _x) << 2;
+      const data = bitmap.readUInt32BE(index);
+
+      finalBitmap.writeUInt32BE(data, _idx);
+    }
+  }
+
+  return finalBitmap;
 }
 
 function gradientConstructor(resolve, reject, { height, width, gradient }) {
