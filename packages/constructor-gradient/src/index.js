@@ -52,6 +52,7 @@ function createGradient(width, height, gradient) {
   const x = Math.cos((angle / 180) * Math.PI);
   const y = Math.sin((angle / 180) * Math.PI);
 
+  Math.cos((10 / width / Math.PI) * x);
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
@@ -59,6 +60,8 @@ function createGradient(width, height, gradient) {
       const xAdj =
         x < 0 ? ((width - column) / width) * -x : (column / width) * x;
       const a = yAdj + xAdj;
+
+      console.log(Math.cos((10 / width / Math.PI) * row));
 
       bitmap[index + 0] =
         limit255((1 - a + modifier) * color1.r) +
@@ -80,14 +83,10 @@ function gradientConstructor(resolve, reject, { height, width, gradient }) {
   gradient = Object.assign({ colors: [], angle: 0, modifier: 0 }, gradient);
 
   const { colors = [] } = gradient;
-  const gradients = colors.length - 2;
 
-  // for (let i = 0; i <= gradients; i++) {
   const data = createGradient(width, height, {
-    ...gradient,
-    colors: [colors[0], colors[0 + 1]]
+    ...gradient
   });
-  // }
 
   this.bitmap = {
     data,
