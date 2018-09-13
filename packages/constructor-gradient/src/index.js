@@ -70,23 +70,26 @@ function createGradient(width, height, gradient) {
   console.log(colors);
   console.log(color1, color2);
 
+  let lastWave = 1;
+  let crossedZero = false;
+
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
-      const progress = (row * y * column * x) / max;
+      const progress = (column * x) / max;
 
       // console.log(progress);
-      if (progress > (currentSegment + 1) * segments) {
-        currentSegment++;
-        color1 =
-          oddSegment && colors[currentSegment + 1]
-            ? colors[currentSegment + 1]
-            : colors[currentSegment];
-        color2 = oddSegment
-          ? colors[currentSegment]
-          : colors[currentSegment + 1];
-        console.log(color1, color2);
-        oddSegment = !oddSegment;
-      }
+      // if (progress > (currentSegment + 1) * segments) {
+      //   currentSegment++;
+      //   color1 =
+      //     oddSegment && colors[currentSegment + 1]
+      //       ? colors[currentSegment + 1]
+      //       : colors[currentSegment];
+      //   color2 = oddSegment
+      //     ? colors[currentSegment]
+      //     : colors[currentSegment + 1];
+      //   console.log(color1, color2);
+      //   oddSegment = !oddSegment;
+      // }
 
       const index = (width * row + column) << 2;
 
@@ -98,6 +101,33 @@ function createGradient(width, height, gradient) {
       const color1Adjustment = 1 - a;
       const color2Adjustment = a;
 
+      console.log(wave, lastWave);
+      if (currentSegment < colors.length - 1) {
+        if (wave < 0 && wave > lastWave && crossedZero) {
+          console.log('change color up');
+          currentSegment++;
+          crossedZero = false;
+          color1 = colors[currentSegment + 1] || colors[currentSegment];
+          color2 = colors[currentSegment] || colors[currentSegment];
+          console.log(color1, color2);
+        } else if (
+          wave > 0 &&
+          wave < lastWave &&
+          crossedZero &&
+          currentSegment
+        ) {
+          console.log('change color down');
+          currentSegment++;
+          crossedZero = false;
+          color1 = colors[currentSegment] || colors[currentSegment];
+          color2 = colors[currentSegment + 1] || colors[currentSegment];
+          console.log(color1, color2);
+        } else if ((lastWave >= 0 && wave < 0) || (lastWave <= 0 && wave > 0)) {
+          console.log('crossed zero');
+          crossedZero = true;
+        }
+      }
+
       bitmap[index + 0] =
         limit255((color1Adjustment + modifier) * color1.r) +
         limit255((color2Adjustment - modifier) * color2.r);
@@ -108,6 +138,8 @@ function createGradient(width, height, gradient) {
         limit255((color1Adjustment + modifier) * color1.b) +
         limit255((color2Adjustment - modifier) * color2.b);
       bitmap[index + 3] = 0xff;
+
+      lastWave = wave;
     }
   }
 
