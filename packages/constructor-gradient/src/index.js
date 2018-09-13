@@ -100,21 +100,22 @@ function createGradient(width, height, gradient) {
       const color1Adjustment = 1 - a;
       const color2Adjustment = a;
 
-      if (wave < 0 && wave > lastWave && crossedZero) {
+      const nextWave = Math.cos(
+        (waves / (width * Math.abs(x) + height * Math.abs(y)) / Math.PI) *
+          (((column + 1) % width) * Math.abs(x) +
+            ((row + 1) % height) * Math.abs(y))
+      );
+
+      console.log('nextWave', nextWave);
+      if (nextWave < 0 && nextWave > wave && crossedZero) {
         console.log('change color up');
         currentSegment++;
         crossedZero = false;
-        // color1 = color2;
-        // color2 = colors[currentSegment + 1];
-        // console.log(color1, color2);
-      } else if (wave > 0 && wave < lastWave && crossedZero) {
+      } else if (nextWave > 0 && nextWave < wave && crossedZero) {
         console.log('change color down');
         currentSegment++;
         crossedZero = false;
-        // color1 = colors[currentSegment] || colors[currentSegment];
-        // color2 = colors[currentSegment + 1] || colors[currentSegment];
-        // console.log(color1, color2);
-      } else if ((lastWave >= 0 && wave < 0) || (lastWave <= 0 && wave > 0)) {
+      } else if ((wave >= 0 && nextWave < 0) || (wave <= 0 && nextWave > 0)) {
         console.log('CROSSED ZERO');
         crossedZero = true;
       }
@@ -123,7 +124,7 @@ function createGradient(width, height, gradient) {
       let color1 = seg % 2 === 0 ? colors[seg] : colors[seg + 1];
       let color2 = seg % 2 === 0 ? colors[seg + 1] : colors[seg];
 
-      console.log(wave);
+      console.log(row, wave);
       console.log(`IN SEGMENT ${currentSegment % (colors.length - 1)}`);
       console.log();
 
