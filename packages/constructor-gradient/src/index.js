@@ -44,22 +44,54 @@ function parseColor(color) {
 
 function createGradient(width, height, gradient) {
   const bitmap = Buffer.alloc(height * width * 4);
-  const { colors = [], angle = 0, modifier = 0 } = gradient;
+  let { colors = [], angle = 0, modifier = 0 } = gradient;
 
-  const color1 = parseColor(colors[0]);
-  const color2 = parseColor(colors[1]);
+  colors = colors.map(parseColor);
 
   const x = Math.cos((angle / 180) * Math.PI);
   const y = Math.sin((angle / 180) * Math.PI);
 
   console.log('here', x, y, angle);
 
+  console.log('height', height);
+  console.log('width', width);
+  const waves = 10 * (colors.length - 1);
+  const xMax = parseInt((width * x).toFixed(10)) || 1;
+  const yMax = parseInt((height * y).toFixed(10)) || 1;
+  const max = xMax * yMax;
+
+  const segments = 1 / (colors.length - 1);
+  console.log(yMax, xMax, max, segments);
+  let currentSegment = 0;
+  let color1 = colors[currentSegment];
+  let color2 = colors[currentSegment + 1];
+  let oddSegment = true;
+
+  console.log(colors);
+  console.log(color1, color2);
+
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
+      const progress = (row * y * column * x) / max;
+
+      // console.log(progress);
+      if (progress > (currentSegment + 1) * segments) {
+        currentSegment++;
+        color1 =
+          oddSegment && colors[currentSegment + 1]
+            ? colors[currentSegment + 1]
+            : colors[currentSegment];
+        color2 = oddSegment
+          ? colors[currentSegment]
+          : colors[currentSegment + 1];
+        console.log(color1, color2);
+        oddSegment = !oddSegment;
+      }
+
       const index = (width * row + column) << 2;
 
       const wave = Math.cos(
-        (10 / (width * Math.abs(x) + height * Math.abs(y)) / Math.PI) *
+        (waves / (width * Math.abs(x) + height * Math.abs(y)) / Math.PI) *
           (column * Math.abs(x) + row * Math.abs(y))
       );
       const a = 1 - (wave + 1) / 2;
