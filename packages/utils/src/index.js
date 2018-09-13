@@ -1,3 +1,10 @@
+export function limit255(n) {
+  n = Math.max(n, 0);
+  n = Math.min(n, 255);
+
+  return n;
+}
+
 export function isNodePattern(cb) {
   if (typeof cb === 'undefined') {
     return false;

@@ -2,7 +2,7 @@ import fs from 'fs';
 import Path from 'path';
 import EventEmitter from 'events';
 
-import { isNodePattern, throwError, scan } from '@jimp/utils';
+import { isNodePattern, throwError, scan, limit255 } from '@jimp/utils';
 import anyBase from 'any-base';
 import mkdirp from 'mkdirp';
 import pixelMatch from 'pixelmatch';
@@ -924,12 +924,7 @@ Jimp.cssColorToHex = function(cssColor) {
  * @param {number} n a number
  * @returns {number} the number limited to between 0 or 255
  */
-Jimp.limit255 = function(n) {
-  n = Math.max(n, 0);
-  n = Math.min(n, 255);
-
-  return n;
-};
+Jimp.limit255 = limit255;
 
 /**
  * Diffs two images and returns

@@ -1,5 +1,5 @@
 import tinyColor from 'tinycolor2';
-import { throwError, isNodePattern } from '@jimp/utils';
+import { throwError, isNodePattern, limit255 } from '@jimp/utils';
 
 function applyKernel(im, kernel, x, y) {
   const value = [0, 0, 0];
@@ -606,9 +606,9 @@ export default () => ({
     this.scanQuiet(x, y, w, h, function(xx, yx, idx) {
       const value = applyKernel(source, kernel, xx, yx);
 
-      this.bitmap.data[idx] = this.constructor.limit255(value[0]);
-      this.bitmap.data[idx + 1] = this.constructor.limit255(value[1]);
-      this.bitmap.data[idx + 2] = this.constructor.limit255(value[2]);
+      this.bitmap.data[idx] = limit255(value[0]);
+      this.bitmap.data[idx + 1] = limit255(value[1]);
+      this.bitmap.data[idx + 2] = limit255(value[2]);
     });
 
     if (isNodePattern(cb)) {

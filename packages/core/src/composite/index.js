@@ -1,4 +1,4 @@
-import { isNodePattern, throwError } from '@jimp/utils';
+import { isNodePattern, throwError, limit255 } from '@jimp/utils';
 import * as constants from '../constants';
 
 import * as compositeModes from './composite-modes';
@@ -78,18 +78,10 @@ export default function composite(src, x, y, options = {}, cb) {
       opacitySource
     );
 
-    baseImage.bitmap.data[dstIdx + 0] = this.constructor.limit255(
-      blended.r * 255
-    );
-    baseImage.bitmap.data[dstIdx + 1] = this.constructor.limit255(
-      blended.g * 255
-    );
-    baseImage.bitmap.data[dstIdx + 2] = this.constructor.limit255(
-      blended.b * 255
-    );
-    baseImage.bitmap.data[dstIdx + 3] = this.constructor.limit255(
-      blended.a * 255
-    );
+    baseImage.bitmap.data[dstIdx + 0] = limit255(blended.r * 255);
+    baseImage.bitmap.data[dstIdx + 1] = limit255(blended.g * 255);
+    baseImage.bitmap.data[dstIdx + 2] = limit255(blended.b * 255);
+    baseImage.bitmap.data[dstIdx + 3] = limit255(blended.a * 255);
   });
 
   if (isNodePattern(cb)) {

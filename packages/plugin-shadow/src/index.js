@@ -1,4 +1,4 @@
-import { isNodePattern } from '@jimp/utils';
+import { isNodePattern, limit255 } from '@jimp/utils';
 
 /**
  * Creates a circle out of an image.
@@ -35,7 +35,7 @@ export default () => ({
         shadow.bitmap.data[idx + 1] = 0x00;
         shadow.bitmap.data[idx + 2] = 0x00;
         // up the opacity a little,
-        shadow.bitmap.data[idx + 3] = shadow.constructor.limit255(
+        shadow.bitmap.data[idx + 3] = limit255(
           shadow.bitmap.data[idx + 3] * opacity
         );
 

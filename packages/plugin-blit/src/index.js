@@ -1,4 +1,4 @@
-import { throwError, isNodePattern } from '@jimp/utils';
+import { throwError, isNodePattern, limit255 } from '@jimp/utils';
 
 export default () => ({
   /**
@@ -87,9 +87,7 @@ export default () => ({
           ((src.a * (src.g - dst.g) - dst.g + 255) >> 8) + dst.g;
         baseImage.bitmap.data[dstIdx + 2] =
           ((src.a * (src.b - dst.b) - dst.b + 255) >> 8) + dst.b;
-        baseImage.bitmap.data[dstIdx + 3] = this.constructor.limit255(
-          dst.a + src.a
-        );
+        baseImage.bitmap.data[dstIdx + 3] = limit255(dst.a + src.a);
       }
     });
 

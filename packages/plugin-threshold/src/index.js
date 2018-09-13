@@ -1,4 +1,4 @@
-import { isNodePattern, throwError } from '@jimp/utils';
+import { isNodePattern, throwError, limit255 } from '@jimp/utils';
 
 /**
  * Applies a minimum color threshold to a greyscale image.  Converts image to greyscale by default
@@ -23,8 +23,8 @@ export default () => ({
       return throwError.call(this, 'autoGreyscale must be a boolean', cb);
     }
 
-    max = this.constructor.limit255(max);
-    replace = this.constructor.limit255(replace);
+    max = limit255(max);
+    replace = limit255(replace);
 
     if (autoGreyscale) {
       this.greyscale();
