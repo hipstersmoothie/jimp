@@ -52,26 +52,43 @@ function createGradient(width, height, gradient) {
   const x = Math.cos((angle / 180) * Math.PI);
   const y = Math.sin((angle / 180) * Math.PI);
 
-  Math.cos((10 / width / Math.PI) * x);
+  console.log('here', x, y, angle);
+
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
-      const yAdj = y < 0 ? ((height - row) / height) * -y : (row / height) * y;
-      const xAdj =
-        x < 0 ? ((width - column) / width) * -x : (column / width) * x;
-      const a = yAdj + xAdj;
 
-      console.log(Math.cos((10 / width / Math.PI) * row));
+      let wave;
+      let a;
+      let color1Adjustment;
+      let color2Adjustment;
+
+      if (x < 0) {
+        wave = Math.cos(
+          (10 / (width * x + height * y) / Math.PI) * (column * x + row * y)
+        );
+        console.log(wave);
+        a = 1 - (wave + 1) / 2;
+        color1Adjustment = 1 - a;
+        color2Adjustment = a;
+      } else {
+        wave = Math.cos(
+          (10 / (width * x + height * y) / Math.PI) * (column * x + row * y)
+        );
+        a = 1 - (wave + 1) / 2;
+        color1Adjustment = 1 - a;
+        color2Adjustment = a;
+      }
 
       bitmap[index + 0] =
-        limit255((1 - a + modifier) * color1.r) +
-        limit255((0 + a - modifier) * color2.r);
+        limit255((color1Adjustment + modifier) * color1.r) +
+        limit255((color2Adjustment - modifier) * color2.r);
       bitmap[index + 1] =
-        limit255((1 - a + modifier) * color1.g) +
-        limit255((0 + a - modifier) * color2.g);
+        limit255((color1Adjustment + modifier) * color1.g) +
+        limit255((color2Adjustment - modifier) * color2.g);
       bitmap[index + 2] =
-        limit255((1 - a + modifier) * color1.b) +
-        limit255((0 + a - modifier) * color2.b);
+        limit255((color1Adjustment + modifier) * color1.b) +
+        limit255((color2Adjustment - modifier) * color2.b);
       bitmap[index + 3] = 0xff;
     }
   }
