@@ -42,7 +42,8 @@ function parseColor(color) {
   return color;
 }
 
-function createGradient(bitmap, gradient) {
+function createGradient(width, height, gradient) {
+  const bitmap = Buffer.alloc(height * width * 4);
   const { colors = [], angle = 0, modifier = 0 } = gradient;
 
   const color1 = parseColor(colors[0]);
@@ -51,43 +52,49 @@ function createGradient(bitmap, gradient) {
   const x = Math.cos((angle / 180) * Math.PI);
   const y = Math.sin((angle / 180) * Math.PI);
 
-  for (let column = 0; column < bitmap.width; column++) {
-    for (let row = 0; row < bitmap.height; row++) {
-      const index = (bitmap.width * row + column) << 2;
-      const yAdj =
-        y < 0
-          ? ((bitmap.height - row) / bitmap.height) * -y
-          : (row / bitmap.height) * y;
+  for (let column = 0; column < width; column++) {
+    for (let row = 0; row < height; row++) {
+      const index = (width * row + column) << 2;
+      const yAdj = y < 0 ? ((height - row) / height) * -y : (row / height) * y;
       const xAdj =
-        x < 0
-          ? ((bitmap.width - column) / bitmap.width) * -x
-          : (column / bitmap.width) * x;
+        x < 0 ? ((width - column) / width) * -x : (column / width) * x;
       const a = yAdj + xAdj;
 
-      bitmap.data[index + 0] =
+      bitmap[index + 0] =
         limit255((1 - a + modifier) * color1.r) +
         limit255((0 + a - modifier) * color2.r);
-      bitmap.data[index + 1] =
+      bitmap[index + 1] =
         limit255((1 - a + modifier) * color1.g) +
         limit255((0 + a - modifier) * color2.g);
-      bitmap.data[index + 2] =
+      bitmap[index + 2] =
         limit255((1 - a + modifier) * color1.b) +
         limit255((0 + a - modifier) * color2.b);
-      bitmap.data[index + 3] = 0xff;
+      bitmap[index + 3] = 0xff;
     }
   }
+
+  return bitmap;
 }
 
 function gradientConstructor(resolve, reject, { height, width, gradient }) {
+  gradient = Object.assign({ colors: [], angle: 0, modifier: 0 }, gradient);
+
+  const { colors = [] } = gradient;
+  const gradients = colors.length - 2;
+
+  // for (let i = 0; i <= gradients; i++) {
+  const data = createGradient(width, height, {
+    ...gradient,
+    colors: [colors[0], colors[0 + 1]]
+  });
+  // }
+
   this.bitmap = {
-    data: Buffer.alloc(height * width * 4),
+    data,
     width,
     height
   };
 
-  const { colors = [], angle = 0, modifier = 0 } = gradient;
-
-  createGradient(this.bitmap, gradient);
   resolve();
 }
 
