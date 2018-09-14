@@ -79,7 +79,9 @@ function createGradient(width, height, gradient) {
       // 1 period for every color transition
       const periodLength = (colors.length - 1) * Math.PI;
       // Calculate a cosine wave to blend between two colors
-      const wave = Math.cos((column * periodLength) / width);
+      const horizontal = Math.cos((column * periodLength) / width);
+      const vertical = -Math.cos((row * periodLength) / height);
+      const wave = horizontal * x + vertical * y;
       // This gets color to fade on a scale of 0-1
       const a = (wave + 1) / 2;
       const color1Adjustment = a + modifier;
@@ -132,22 +134,23 @@ function createGradient(width, height, gradient) {
     }
   }
 
-  const finalBitmap = Buffer.alloc(bitmap.length);
+  // Shortcut to on rotate 0-90 and flip the image for the rest
+  // const finalBitmap = Buffer.alloc(bitmap.length);
 
-  for (let column = 0; column < width; column++) {
-    for (let row = 0; row < height; row++) {
-      const index = (width * row + column) << 2;
+  // for (let column = 0; column < width; column++) {
+  //   for (let row = 0; row < height; row++) {
+  //     const index = (width * row + column) << 2;
 
-      const _x = x < 0 ? width - 1 - column : column;
-      const _y = y < 0 ? height - 1 - row : row;
-      const _idx = (width * _y + _x) << 2;
-      const data = bitmap.readUInt32BE(index);
+  //     const _x = x < 0 ? width - 1 - column : column;
+  //     const _y = y < 0 ? height - 1 - row : row;
+  //     const _idx = (width * _y + _x) << 2;
+  //     const data = bitmap.readUInt32BE(index);
 
-      finalBitmap.writeUInt32BE(data, _idx);
-    }
-  }
+  //     finalBitmap.writeUInt32BE(data, _idx);
+  //   }
+  // }
 
-  return finalBitmap;
+  return bitmap;
 }
 
 function gradientConstructor(resolve, reject, { height, width, gradient }) {
