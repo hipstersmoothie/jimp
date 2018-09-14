@@ -76,13 +76,16 @@ function createGradient(width, height, gradient) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
 
+      // 1 period for every color transition
       const periodLength = (colors.length - 1) * Math.PI;
+      // Calculate a cosine wave to blend between two colors
       const wave = Math.cos((column * periodLength) / width);
-      const a = 1 - (wave + 1) / 2;
+      // This gets color to fade on a scale of 0-1
+      const a = (wave + 1) / 2;
+      const color1Adjustment = a + modifier;
+      const color2Adjustment = 1 - a - modifier;
 
-      const color1Adjustment = 1 - a;
-      const color2Adjustment = a;
-
+      // const nextWave = Math.cos(x);
       // const nextWave = Math.cos(
       //   (waves / (width * Math.abs(x) + height * Math.abs(y)) / Math.PI) *
       //     (((column + 1) % width) * Math.abs(x) +
@@ -115,14 +118,14 @@ function createGradient(width, height, gradient) {
       // console.log(color1, color2);
 
       bitmap[index + 0] =
-        limit255((color1Adjustment + modifier) * color1.r) +
-        limit255((color2Adjustment - modifier) * color2.r);
+        limit255(color1Adjustment * color1.r) +
+        limit255(color2Adjustment * color2.r);
       bitmap[index + 1] =
-        limit255((color1Adjustment + modifier) * color1.g) +
-        limit255((color2Adjustment - modifier) * color2.g);
+        limit255(color1Adjustment * color1.g) +
+        limit255(color2Adjustment * color2.g);
       bitmap[index + 2] =
-        limit255((color1Adjustment + modifier) * color1.b) +
-        limit255((color2Adjustment - modifier) * color2.b);
+        limit255(color1Adjustment * color1.b) +
+        limit255(color2Adjustment * color2.b);
       bitmap[index + 3] = 0xff;
 
       lastWave = wave;
