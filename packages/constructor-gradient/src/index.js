@@ -55,12 +55,16 @@ function createGradient(width, height, gradient) {
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
 
-  let line = width;
+  let line = height;
   let currentSegment = 0;
 
   if (y !== 0 && x !== 0) {
     // Line to calculate wave across - hypotonous
     line = width / Math.cos(angleInRadians);
+  }
+
+  if (y === 1) {
+    line = width;
   }
 
   // Calculate a cosine wave to blend between two colors
