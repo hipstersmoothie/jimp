@@ -53,13 +53,11 @@ function createGradient(width, height, gradient) {
   colors = colors.map(parseColor);
 
   const angleInRadians = (angle / 180) * Math.PI;
-  const x = parseInt(Math.cos(angleInRadians).toFixed(15), 10);
-  const y = parseInt(Math.sin(angleInRadians).toFixed(15), 10);
+  const x = parseFloat(Math.cos(angleInRadians).toFixed(15), 10);
+  const y = parseFloat(Math.sin(angleInRadians).toFixed(15), 10);
 
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
-  console.log('PERIOD LENGTH', periodLength);
-  console.log(angle, angleInRadians, x, y);
   let line = height;
 
   if (y !== 0 && x !== 0) {
@@ -114,9 +112,9 @@ function createGradient(width, height, gradient) {
     return seg;
   }
 
-  for (let column = 0; column < width; column++) {
-    for (let row = 0; row < height; row++) {
-      const index = (width * row + column) << 2;
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const index = (width * column + row) << 2;
 
       const { wave, progress } = calculateWave(column, row, line);
 
@@ -144,7 +142,7 @@ function createGradient(width, height, gradient) {
 
   // Shortcut to on rotate 0-90 and flip the image for the rest
   const finalBitmap = Buffer.alloc(bitmap.length);
-  console.log(x, y, width, height);
+
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
