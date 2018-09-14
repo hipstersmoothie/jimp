@@ -55,14 +55,15 @@ function createGradient(width, height, gradient) {
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
   console.log('PERIOD LENGTH', periodLength);
+  console.log(angle, angleInRadians, x, y);
   let line = height;
 
   if (y !== 0 && x !== 0) {
     // Line to calculate wave across - hypotonous
-    line = width / Math.cos(angleInRadians);
+    line = Math.abs(width / Math.cos(angleInRadians));
   }
 
-  if (y === 1) {
+  if (Math.abs(y) === 1) {
     line = width;
   }
 
@@ -85,7 +86,7 @@ function createGradient(width, height, gradient) {
   }
 
   function calculateWave(c, r, w = width) {
-    const pointOnLine = project([r, c], [x, y]);
+    const pointOnLine = project([r, c], [Math.abs(x), Math.abs(y)]);
     const progressOfWave = progress(pointOnLine);
 
     return {
@@ -101,10 +102,12 @@ function createGradient(width, height, gradient) {
       seg++;
     }
 
+    if (seg >= colors.length - 1) {
+      seg--;
+    }
+
     return seg;
   }
-
-  console.log(x, y);
 
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
@@ -120,13 +123,6 @@ function createGradient(width, height, gradient) {
       const seg = determineSegment(progress);
       const color1 = seg % 2 === 0 ? colors[seg] : colors[seg + 1];
       const color2 = seg % 2 === 0 ? colors[seg + 1] : colors[seg];
-      console.log({
-        column,
-        row,
-        segment: determineSegment(progress),
-        progress,
-        halfPeriod: periodLength / 2
-      });
 
       bitmap[index + 0] =
         limit255(color1Adjustment * color1.r) +
