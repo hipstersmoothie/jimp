@@ -1,5 +1,5 @@
 import tinyColor from 'tinycolor2';
-import { scan, throwError, isNodePattern, limit255 } from '@jimp/utils';
+import { throwError, isNodePattern, limit255 } from '@jimp/utils';
 
 function intToRGBA(i, cb) {
   if (typeof i !== 'number') {
@@ -46,6 +46,26 @@ function hypotenuse([x, y]) {
   return Math.sqrt(x * x + y * y);
 }
 
+function project(v1, v2) {
+  const dot = (v1[0] * v2[0] + v1[1] * v2[1]) / (v2[0] * v2[0] + v2[1] * v2[1]);
+
+  return [v2[0] * dot, v2[1] * dot];
+}
+
+function determineSegment(progress, periodWidth, maxColors) {
+  let seg = 0;
+
+  while (progress > periodWidth * (seg + 1)) {
+    seg++;
+  }
+
+  if (seg >= maxColors) {
+    seg--;
+  }
+
+  return seg;
+}
+
 function createGradient(width, height, gradient) {
   const bitmap = Buffer.alloc(height * width * 4);
   let { colors = [], angle = 0, modifier = 0 } = gradient;
@@ -58,10 +78,12 @@ function createGradient(width, height, gradient) {
 
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
-  let line = height;
+  // For 0/180 just use height and for 90/280 just use width
+  let line = Math.abs(y) === 1 ? width : height;
 
+  // We have and angle that !== 0, 90, 180, 270
   if (y !== 0 && x !== 0) {
-    // Line to calculate wave across - hypotenuse
+    // Determine the length of the wave
     line = Math.abs(width / Math.cos(angleInRadians));
 
     // Triangle would go outside of circle
@@ -70,60 +92,38 @@ function createGradient(width, height, gradient) {
     }
   }
 
-  if (Math.abs(y) === 1) {
-    line = width;
-  }
-
+  // Each period represent 2 colors blending, so we will have colors.length - 1 overall
   const periodWidth = line / (colors.length - 1);
 
-  console.log('WIDTH', line);
-  console.log('PERIOD WIDTH', periodWidth);
-
-  // Calculate a cosine wave to blend between two colors
-  // Math.abs for 90 degree hack
-  function project(v1, v2) {
-    const dot =
-      (v1[0] * v2[0] + v1[1] * v2[1]) / (v2[0] * v2[0] + v2[1] * v2[1]);
-
-    return [v2[0] * dot, v2[1] * dot];
-  }
-
   function calculateWave(c, r, w = width) {
+    // Math.abs for 90 degree hack
+    // Project point onto gradient line
     const pointOnLine = project([r, c], [Math.abs(x), Math.abs(y)]);
+    // Get Distance to that point. this will represent the percentage of the line we have gone through
     const progressOfWave = hypotenuse(pointOnLine);
 
     return {
       progress: progressOfWave,
+      // Calculate a cosine wave to blend between two colors
       wave: Math.cos((periodLength * progressOfWave) / w)
     };
-  }
-
-  function determineSegment(progress) {
-    let seg = 0;
-
-    while (progress > periodWidth * (seg + 1)) {
-      seg++;
-    }
-
-    if (seg >= colors.length - 1) {
-      seg--;
-    }
-
-    return seg;
   }
 
   for (let row = 0; row < height; row++) {
     for (let column = 0; column < width; column++) {
       const index = (width * column + row) << 2;
-
       const { wave, progress } = calculateWave(column, row, line);
 
-      // This gets color to fade on a scale of 0-1
+      // Put A on a scale of 0 to 1 rather than -1 to 1
       const a = (wave + 1) / 2;
+      // This gets color to fade on a scale of 0 to 1
       const color1Adjustment = a + modifier;
+      // Do the opposite for the other color. color1Adjustment + color2Adjustment = a
       const color2Adjustment = 1 - a - modifier;
 
-      const seg = determineSegment(progress);
+      // Determine the color base on progress through line
+      const seg = determineSegment(progress, periodWidth, colors.length - 1);
+      // Have to flip between colors for some reason?
       const color1 = seg % 2 === 0 ? colors[seg] : colors[seg + 1];
       const color2 = seg % 2 === 0 ? colors[seg + 1] : colors[seg];
 
@@ -160,16 +160,11 @@ function createGradient(width, height, gradient) {
 }
 
 function gradientConstructor(resolve, reject, { height, width, gradient }) {
+  // Set defaults
   gradient = Object.assign({ colors: [], angle: 0, modifier: 0 }, gradient);
 
-  const { colors = [] } = gradient;
-
-  const data = createGradient(width, height, {
-    ...gradient
-  });
-
   this.bitmap = {
-    data,
+    data: createGradient(width, height, gradient),
     width,
     height
   };
