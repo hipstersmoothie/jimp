@@ -42,6 +42,10 @@ function parseColor(color) {
   return color;
 }
 
+function hypotenuse([x, y]) {
+  return Math.sqrt(x * x + y * y);
+}
+
 function createGradient(width, height, gradient) {
   const bitmap = Buffer.alloc(height * width * 4);
   let { colors = [], angle = 0, modifier = 0 } = gradient;
@@ -49,8 +53,8 @@ function createGradient(width, height, gradient) {
   colors = colors.map(parseColor);
 
   const angleInRadians = (angle / 180) * Math.PI;
-  const x = Math.cos(angleInRadians);
-  const y = Math.sin(angleInRadians);
+  const x = parseInt(Math.cos(angleInRadians).toFixed(15), 10);
+  const y = parseInt(Math.sin(angleInRadians).toFixed(15), 10);
 
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
@@ -59,8 +63,13 @@ function createGradient(width, height, gradient) {
   let line = height;
 
   if (y !== 0 && x !== 0) {
-    // Line to calculate wave across - hypotonous
+    // Line to calculate wave across - hypotenuse
     line = Math.abs(width / Math.cos(angleInRadians));
+
+    // Triangle would go outside of circle
+    if (line > height) {
+      line = hypotenuse([width, height]);
+    }
   }
 
   if (Math.abs(y) === 1) {
@@ -81,13 +90,9 @@ function createGradient(width, height, gradient) {
     return [v2[0] * dot, v2[1] * dot];
   }
 
-  function progress([x, y]) {
-    return Math.sqrt(x * x + y * y);
-  }
-
   function calculateWave(c, r, w = width) {
     const pointOnLine = project([r, c], [Math.abs(x), Math.abs(y)]);
-    const progressOfWave = progress(pointOnLine);
+    const progressOfWave = hypotenuse(pointOnLine);
 
     return {
       progress: progressOfWave,
@@ -139,7 +144,7 @@ function createGradient(width, height, gradient) {
 
   // Shortcut to on rotate 0-90 and flip the image for the rest
   const finalBitmap = Buffer.alloc(bitmap.length);
-
+  console.log(x, y, width, height);
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
