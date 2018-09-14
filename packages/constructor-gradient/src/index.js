@@ -54,9 +54,8 @@ function createGradient(width, height, gradient) {
 
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
-
+  console.log('PERIOD LENGTH', periodLength);
   let line = height;
-  let currentSegment = 0;
 
   if (y !== 0 && x !== 0) {
     // Line to calculate wave across - hypotonous
@@ -66,6 +65,11 @@ function createGradient(width, height, gradient) {
   if (y === 1) {
     line = width;
   }
+
+  const periodWidth = line / (colors.length - 1);
+
+  console.log('WIDTH', line);
+  console.log('PERIOD WIDTH', periodWidth);
 
   // Calculate a cosine wave to blend between two colors
   // Math.abs for 90 degree hack
@@ -81,14 +85,23 @@ function createGradient(width, height, gradient) {
   }
 
   function calculateWave(c, r, w = width) {
-    const slope = r / c;
     const pointOnLine = project([r, c], [x, y]);
-    // console.log(c, r, slope);
-    // console.log(pointOnLine);
-    // console.log('LINE LENGTH', line);
-    // console.log('CURRENT POSITION', progress(pointOnLine));
     const progressOfWave = progress(pointOnLine);
-    return Math.cos((periodLength * progressOfWave) / w);
+
+    return {
+      progress: progressOfWave,
+      wave: Math.cos((periodLength * progressOfWave) / w)
+    };
+  }
+
+  function determineSegment(progress) {
+    let seg = 0;
+
+    while (progress > periodWidth * (seg + 1)) {
+      seg++;
+    }
+
+    return seg;
   }
 
   console.log(x, y);
@@ -97,16 +110,23 @@ function createGradient(width, height, gradient) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
 
-      const wave = calculateWave(column, row, line);
+      const { wave, progress } = calculateWave(column, row, line);
 
       // This gets color to fade on a scale of 0-1
       const a = (wave + 1) / 2;
       const color1Adjustment = a + modifier;
       const color2Adjustment = 1 - a - modifier;
 
-      const seg = currentSegment % (colors.length - 1);
+      const seg = determineSegment(progress);
       const color1 = seg % 2 === 0 ? colors[seg] : colors[seg + 1];
       const color2 = seg % 2 === 0 ? colors[seg + 1] : colors[seg];
+      console.log({
+        column,
+        row,
+        segment: determineSegment(progress),
+        progress,
+        halfPeriod: periodLength / 2
+      });
 
       bitmap[index + 0] =
         limit255(color1Adjustment * color1.r) +
