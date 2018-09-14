@@ -48,76 +48,61 @@ function createGradient(width, height, gradient) {
 
   colors = colors.map(parseColor);
 
-  const x = Math.cos((angle / 180) * Math.PI);
-  const y = Math.sin((angle / 180) * Math.PI);
+  const angleInRadians = (angle / 180) * Math.PI;
+  const x = Math.cos(angleInRadians);
+  const y = Math.sin(angleInRadians);
 
-  console.log('here', x, y, angle);
+  // 1 period for every color transition
+  const periodLength = (colors.length - 1) * Math.PI;
 
-  console.log('height', height);
-  console.log('width', width);
-  const waves = 10 * (colors.length - 1);
-  const xMax = parseInt((width * x).toFixed(10)) || 1;
-  const yMax = parseInt((height * y).toFixed(10)) || 1;
-  const max = xMax * yMax;
-
-  const segments = 1 / (colors.length - 1);
-  console.log(yMax, xMax, max, segments);
+  let line = width;
   let currentSegment = 0;
 
-  let oddSegment = true;
+  if (y !== 0 && x !== 0) {
+    // Line to calculate wave across - hypotonous
+    line = width / Math.cos(angleInRadians);
+  }
 
-  console.log(colors);
-  // console.log(color1, color2);
+  // Calculate a cosine wave to blend between two colors
+  // Math.abs for 90 degree hack
+  function project(v1, v2) {
+    const dot =
+      (v1[0] * v2[0] + v1[1] * v2[1]) / (v2[0] * v2[0] + v2[1] * v2[1]);
 
-  let lastWave = 1;
-  let crossedZero = false;
+    return [v2[0] * dot, v2[1] * dot];
+  }
+
+  function progress([x, y]) {
+    return Math.sqrt(x * x + y * y);
+  }
+
+  function calculateWave(c, r, w = width) {
+    const slope = r / c;
+    const pointOnLine = project([r, c], [x, y]);
+    // console.log(c, r, slope);
+    // console.log(pointOnLine);
+    // console.log('LINE LENGTH', line);
+    // console.log('CURRENT POSITION', progress(pointOnLine));
+    const progressOfWave = progress(pointOnLine);
+    return Math.cos((periodLength * progressOfWave) / w);
+  }
+
+  console.log(x, y);
 
   for (let column = 0; column < width; column++) {
     for (let row = 0; row < height; row++) {
       const index = (width * row + column) << 2;
 
-      // 1 period for every color transition
-      const periodLength = (colors.length - 1) * Math.PI;
-      // Calculate a cosine wave to blend between two colors
-      const horizontal = Math.cos((column * periodLength) / width);
-      const vertical = -Math.cos((row * periodLength) / height);
-      const wave = horizontal * x + vertical * y;
+      const wave = calculateWave(column, row, line);
+
       // This gets color to fade on a scale of 0-1
       const a = (wave + 1) / 2;
       const color1Adjustment = a + modifier;
       const color2Adjustment = 1 - a - modifier;
 
-      // const nextWave = Math.cos(x);
-      // const nextWave = Math.cos(
-      //   (waves / (width * Math.abs(x) + height * Math.abs(y)) / Math.PI) *
-      //     (((column + 1) % width) * Math.abs(x) +
-      //       ((row + 1) % height) * Math.abs(y))
-      // );
-
-      // console.log('nextWave', nextWave);
-      // if (nextWave < 0 && nextWave > wave && crossedZero) {
-      //   console.log('change color up');
-      //   currentSegment++;
-      //   crossedZero = false;
-      // } else if (nextWave > 0 && nextWave < wave && crossedZero) {
-      //   console.log('change color down');
-      //   currentSegment++;
-      //   crossedZero = false;
-      // } else if ((wave >= 0 && nextWave < 0) || (wave <= 0 && nextWave > 0)) {
-      //   console.log('CROSSED ZERO');
-      //   crossedZero = true;
-      // }
-
       const seg = currentSegment % (colors.length - 1);
       const color1 = seg % 2 === 0 ? colors[seg] : colors[seg + 1];
       const color2 = seg % 2 === 0 ? colors[seg + 1] : colors[seg];
-
-      // console.log(width * column);
-      // console.log(row, wave);
-      // console.log(`IN SEGMENT ${currentSegment % (colors.length - 1)}`);
-      // console.log();
-
-      // console.log(color1, color2);
 
       bitmap[index + 0] =
         limit255(color1Adjustment * color1.r) +
@@ -129,28 +114,26 @@ function createGradient(width, height, gradient) {
         limit255(color1Adjustment * color1.b) +
         limit255(color2Adjustment * color2.b);
       bitmap[index + 3] = 0xff;
-
-      lastWave = wave;
     }
   }
 
   // Shortcut to on rotate 0-90 and flip the image for the rest
-  // const finalBitmap = Buffer.alloc(bitmap.length);
+  const finalBitmap = Buffer.alloc(bitmap.length);
 
-  // for (let column = 0; column < width; column++) {
-  //   for (let row = 0; row < height; row++) {
-  //     const index = (width * row + column) << 2;
+  for (let column = 0; column < width; column++) {
+    for (let row = 0; row < height; row++) {
+      const index = (width * row + column) << 2;
 
-  //     const _x = x < 0 ? width - 1 - column : column;
-  //     const _y = y < 0 ? height - 1 - row : row;
-  //     const _idx = (width * _y + _x) << 2;
-  //     const data = bitmap.readUInt32BE(index);
+      const _x = x < 0 ? width - 1 - column : column;
+      const _y = y < 0 ? height - 1 - row : row;
+      const _idx = (width * _y + _x) << 2;
+      const data = bitmap.readUInt32BE(index);
 
-  //     finalBitmap.writeUInt32BE(data, _idx);
-  //   }
-  // }
+      finalBitmap.writeUInt32BE(data, _idx);
+    }
+  }
 
-  return bitmap;
+  return finalBitmap;
 }
 
 function gradientConstructor(resolve, reject, { height, width, gradient }) {
