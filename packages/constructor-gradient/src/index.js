@@ -66,34 +66,60 @@ function determineSegment(progress, periodWidth, maxColors) {
   return seg;
 }
 
+function toRadians(angle) {
+  return (angle / 180) * Math.PI;
+}
+
+function truncateFloat(float) {
+  return parseFloat(float.toFixed(15), 10);
+}
+
 function createGradient(width, height, gradient) {
   const bitmap = Buffer.alloc(height * width * 4);
   let { colors = [], angle = 0, modifier = 0 } = gradient;
 
   colors = colors.map(parseColor);
 
-  const angleInRadians = (angle / 180) * Math.PI;
-  const x = parseFloat(Math.cos(angleInRadians).toFixed(15), 10);
-  const y = parseFloat(Math.sin(angleInRadians).toFixed(15), 10);
+  const quarters = angle / 90;
+
+  if (angle > 90) {
+    console.log({ quarters, newAngle: angle - 90 * quarters });
+    angle = angle - 90 * Math.floor(quarters);
+    console.log({ angle });
+  }
+
+  const angleInRadians = toRadians(angle);
+  const x = truncateFloat(Math.cos(angleInRadians));
+  const y = truncateFloat(Math.sin(angleInRadians));
 
   // 1 period for every color transition
   const periodLength = (colors.length - 1) * Math.PI;
   // For 0/180 just use height and for 90/280 just use width
-  let line = Math.abs(y) === 1 ? width : height;
+  let line = Math.abs(x) === 1 ? width : height;
 
+  // console.log({ angle, angleInRadians });
   // We have and angle that !== 0, 90, 180, 270
   if (y !== 0 && x !== 0) {
     // Determine the length of the wave
     line = Math.abs(width / Math.cos(angleInRadians));
 
     // Triangle would go outside of circle
-    if (line > height) {
-      line = hypotenuse([width, height]);
+    if (line > height || line > width) {
+      const hype = hypotenuse([width, height]);
+
+      if (line >= hype) {
+        const hypeAngle = Math.asin(height / hype);
+        line = Math.cos(angleInRadians - hypeAngle) * hype;
+      } else {
+        line = hype;
+      }
     }
   }
 
+  // console.log('LINE', line);
   // Each period represent 2 colors blending, so we will have colors.length - 1 overall
   const periodWidth = line / (colors.length - 1);
+  // console.log(periodWidth);
 
   function calculateWave(c, r, w = width) {
     // Math.abs for 90 degree hack
@@ -109,8 +135,8 @@ function createGradient(width, height, gradient) {
     };
   }
 
-  for (let row = 0; row < height; row++) {
-    for (let column = 0; column < width; column++) {
+  for (let row = 0; row < width; row++) {
+    for (let column = 0; column < height; column++) {
       const index = (width * column + row) << 2;
       const { wave, progress } = calculateWave(column, row, line);
 
@@ -124,8 +150,11 @@ function createGradient(width, height, gradient) {
       // Determine the color base on progress through line
       const seg = determineSegment(progress, periodWidth, colors.length - 1);
       // Have to flip between colors for some reason?
-      const color1 = seg % 2 === 0 ? colors[seg] : colors[seg + 1];
-      const color2 = seg % 2 === 0 ? colors[seg + 1] : colors[seg];
+      const color1 =
+        (seg % 2 === 0 ? colors[seg] : colors[seg + 1]) || colors[seg];
+      const color2 =
+        (seg % 2 === 0 ? colors[seg + 1] : colors[seg]) || colors[seg];
+      // console.log(wave);
 
       bitmap[index + 0] =
         limit255(color1Adjustment * color1.r) +
@@ -142,21 +171,24 @@ function createGradient(width, height, gradient) {
 
   // Shortcut to on rotate 0-90 and flip the image for the rest
   const finalBitmap = Buffer.alloc(bitmap.length);
+  const xDirection = truncateFloat(Math.cos(toRadians(gradient.angle)));
+  const yDirection = truncateFloat(Math.sin(toRadians(gradient.angle)));
 
-  for (let column = 0; column < width; column++) {
-    for (let row = 0; row < height; row++) {
-      const index = (width * row + column) << 2;
+  console.log({ xDirection, yDirection });
+  // for (let column = 0; column < width; column++) {
+  //   for (let row = 0; row < height; row++) {
+  //     const index = (width * row + column) << 2;
 
-      const _x = x < 0 ? width - 1 - column : column;
-      const _y = y < 0 ? height - 1 - row : row;
-      const _idx = (width * _y + _x) << 2;
-      const data = bitmap.readUInt32BE(index);
+  //     const _x = xDirection < 0 ? width - 1 - column : column;
+  //     const _y = yDirection < 0 ? height - 1 - row : row;
+  //     const _idx = (width * _y + _x) << 2;
+  //     const data = bitmap.readUInt32BE(index);
 
-      finalBitmap.writeUInt32BE(data, _idx);
-    }
-  }
+  //     finalBitmap.writeUInt32BE(data, _idx);
+  //   }
+  // }
 
-  return finalBitmap;
+  return bitmap;
 }
 
 function gradientConstructor(resolve, reject, { height, width, gradient }) {
